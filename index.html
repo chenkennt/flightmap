@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Flight Map</title>
+  <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+  <style type='text/css'>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Helvetica, Arial, Sans-Serif
+    }
+  </style>
+</head>
+
+<body>
+  <div id='printoutPanel'></div>
+  <div id='myMap' style='width: 100vw; height: 100vh;'></div>
+  <script type='text/javascript'>
+    function loadMapScenario() {
+      var map = new Microsoft.Maps.Map(document.getElementById('myMap'), {});
+      var layer = new Microsoft.Maps.Layer();
+      var b = map.getBounds();
+      var generateLocation = () => {
+        var x = b.bounds[0] + (b.bounds[2] - b.bounds[0]) * Math.random();
+        var y = b.bounds[1] + (b.bounds[3] - b.bounds[1]) * Math.random();
+        return new Microsoft.Maps.Location(x, y);
+      };
+      var generateAllAngles = (url, callback) => {
+        var img = new Image();
+        img.onload = function () {
+          var c = document.createElement('canvas');
+          var all = [];
+          for (var a = 0; a < 360; a++) {
+            var rads = a * Math.PI / 180;
+            c.width = img.width;
+            c.height = img.height;
+            var context = c.getContext('2d');
+            context.translate(c.width / 2, c.height / 2);
+            context.rotate(rads);
+            context.drawImage(img, -img.width / 2, -img.height / 2);
+            all.push({
+              width: c.width,
+              height: c.height,
+              url: c.toDataURL()
+            });
+          }
+          callback(all);
+        }
+        img.crossOrigin = 'anonymous';
+        img.src = url;
+      };
+
+      var pins = [];
+      var count = 2000;
+      var allImages;
+      var normalDist = n => {
+        var c = 0;
+        for (var i = 0; i < n; i++) {
+          c += Math.floor(Math.random() * n);
+        }
+        return Math.floor(c / n);
+      };
+      var animate = () => {
+        pins.forEach(p => {
+          if (p.frames.length < 2) return;
+          if (!p.clock) {
+            // first frame
+            var [x, y, d, c] = p.frames[0];
+            p.clock = c;
+            p.realClock = performance.now();
+            p.direction = d;
+          } else {
+            var n = performance.now();
+            p.clock += n - p.realClock;
+            p.realClock = n;
+            while (p.frames.length > 1 && p.clock > p.frames[1][3]) p.frames = p.frames.slice(1);
+            var [x, y, d, c] = p.frames[0];
+            if (p.frames.length > 1) {
+              var [nx, ny, nd, nc] = p.frames[1];
+              var dx = x + (nx - x) / (nc - c) * (p.clock - c);
+              var dy = y + (ny - y) / (nc - c) * (p.clock - c);
+              p.pin.setLocation(new Microsoft.Maps.Location(dy, dx));
+            } else {
+              p.pin.setLocation(new Microsoft.Maps.Location(y, x));
+            }
+            if (p.direction !== d) {
+              p.pin.setOptions({
+                icon: allImages[d].url,
+                anchor: new Microsoft.Maps.Point(allImages[d].width / 2, allImages[d].height / 2)
+              });
+              p.direction = d;
+            }
+          }
+        });
+      };
+      var generate = () => {
+        pins.forEach((p, i) => {
+          var loc = p.frames[p.frames.length - 1];
+          var rads = loc[2] * Math.PI / 180;
+          var dx = p.speed * Math.sin(rads) * b.width / 3000;
+          var dy = p.speed * Math.cos(rads) * b.width / 3000;
+          // var turn = (-6 + normalDist(13)) * 10;
+          var turn = Math.random(), angle = Math.floor(Math.random() * 30);
+          var d = loc[2];
+          if (turn > 0.99) d += angle;
+          else if (turn < 0.01) d -= angle;
+          d = (d + 360) % 360;
+          p.frames.push([loc[0] + dx, loc[1] + dy, d, performance.now()]);
+        });
+      };
+      generateAllAngles('images/plane-small.svg', all => {
+        allImages = all;
+        pins = Array.apply(null, Array(count)).map(() => {
+          var p = generateLocation();
+          var d = Math.floor(Math.random() * 360);
+          var img = allImages[d];
+          var pin = new Microsoft.Maps.Pushpin(p, {
+            icon: img.url,
+            anchor: new Microsoft.Maps.Point(img.width / 2, img.height / 2)
+          });
+          layer.add(pin);
+          return {
+            pin: pin,
+            frames: [[p.longitude, p.latitude, d, performance.now()]],
+            speed: 100
+          };
+        });
+
+        map.layers.insert(layer);
+        setInterval(generate, 1000);
+        setInterval(animate, 30);
+      });
+    }
+  </script>
+  <script type='text/javascript' src='https://cn.bing.com/api/maps/mapcontrol?key=AqWW02afqnXCd03_WLzEt0Rm0fdmD2_gbgwBXVT8ZwKN8fAzIqbxLy2bhdCcwyIh&callback=loadMapScenario'
+    async defer></script>
+</body>
+
+</html>
