@@ -53,7 +53,7 @@
       };
 
       var pins = [];
-      var count = 2000;
+      var count = 500;
       var allImages;
       var normalDist = n => {
         var c = 0;
@@ -104,8 +104,8 @@
           // var turn = (-6 + normalDist(13)) * 10;
           var turn = Math.random(), angle = Math.floor(Math.random() * 30);
           var d = loc[2];
-          if (turn > 0.99) d += angle;
-          else if (turn < 0.01) d -= angle;
+          if (turn > 0.95) d += angle;
+          else if (turn < 0.05) d -= angle;
           d = (d + 360) % 360;
           p.frames.push([loc[0] + dx, loc[1] + dy, d, performance.now()]);
         });
