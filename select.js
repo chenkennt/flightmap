@@ -6,10 +6,10 @@ var result = db
   .filter(d => d.count >= 100);
 
 var topleft = [49, -125], bottomright = [25, -65];
-const minInterval = 16, minLength = 3600;
+const minInterval = 60, minLength = 3600;
 var count = 0;
 var inside = (lat, long) => long > topleft[1] && long < bottomright[1] && lat < topleft[0] && lat > bottomright[0];
-var record = data => {
+var record = (id, data) => {
   if (data.length === 0) return;
   var time = (data[data.length - 1].time - data[0].time) / 1000;
   for (var i = 0; i < data.length; i++)
@@ -17,8 +17,8 @@ var record = data => {
   if (i == data.length) return;
   if (time >= minLength) {
     count++;
-    console.log(`Id: ${count}, time: ${time}s`);
-    fs.writeFileSync(`selected/${count}.json`, JSON.stringify(data));
+    console.log(`No: ${count}, time: ${time}s`);
+    fs.writeFileSync(`selected/${id}-${count}.json`, JSON.stringify(data));
   }
 };
 
@@ -44,11 +44,11 @@ result.forEach(d => {
   var start = 0;
   for (var i = 1; i < pos.length; i++) {
     if (pos[i].time - pos[i - 1].time > minInterval * 1000) {
-      record(pos.slice(start, i));
+      record(d.id, pos.slice(start, i));
       start = i;
     }
   }
-  record(pos.slice(start));
+  record(d.id, pos.slice(start));
 });
 
 console.log("total flight: " + count);

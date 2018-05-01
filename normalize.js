@@ -22,6 +22,13 @@ fs.readdirSync(input).forEach(f => {
     last = d;
   });
 
+  // remove planes that moves too slow
+  var totalDist = dist(normalized[0], normalized[normalized.length - 1]);
+  if (totalDist < 1) {
+    console.error("plane too slow: " + totalDist);
+    
+    return;
+  }
   for (var i = 0; i < normalized.length - 1; i++) {
     normalized[i].direction = Math.round(Math.atan2(normalized[i + 1].long - normalized[i].long, normalized[i + 1].lat - normalized[i].lat) * 180 / Math.PI + 360) % 360;
     if (i > 1) {
@@ -41,9 +48,29 @@ fs.readdirSync(input).forEach(f => {
     }
   }
   normalized[i].direction = normalized[i - 1].direction;
-  result.push({ id: ++count, data: normalized });
+  result.push({ id: f.slice(0, f.indexOf('-')), data: normalized });
 });
 
 console.error(`${result.length} planes normalized.`);
 
-console.log(JSON.stringify(result));
+// convert data back to original format
+var temp = {};
+result.forEach(d => {
+  d.data.forEach(p => {
+    temp[p.time] = temp[p.time] || {
+      time: p.time,
+      acList: []
+    };
+    temp[p.time].acList.push({
+      Icao: d.id,
+      PosTime: p.time,
+      Lat: p.lat,
+      Long: p.long
+    });
+  });
+});
+var out = [];
+for (var k in temp) out.push(temp[k]);
+out.sort((x, y) => x.time - y.time);
+
+console.log(JSON.stringify(out));
