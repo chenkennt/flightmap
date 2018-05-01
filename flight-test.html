@@ -28,10 +28,10 @@
       plane.pin.setLocation(new Microsoft.Maps.Location(lat, long));
       var d = plane.data[frame].direction;
       if (Math.abs(plane.lastD - d) > 2) {
-        plane.pin.setOptions({
+        /*plane.pin.setOptions({
           icon: icons[d].url,
           anchor: new Microsoft.Maps.Point(icons[d].width / 2, icons[d].height / 2)
-        });
+        });*/
         plane.lastD = d;
       }
       /*
@@ -48,8 +48,8 @@
         var loc = new Microsoft.Maps.Location(d.data[0].lat, d.data[0].long);
         var dir = d.data[0].direction;
         var pin = new Microsoft.Maps.Pushpin(loc, {
-          icon: icons[dir].url,
-          anchor: new Microsoft.Maps.Point(icons[dir].width / 2, icons[dir].height / 2)
+          // icon: icons[dir].url,
+          // anchor: new Microsoft.Maps.Point(icons[dir].width / 2, icons[dir].height / 2)
         });
         layer.add(pin);
         return {
@@ -65,7 +65,7 @@
     }
 
     function loadMapScenario() {
-      var map = new Microsoft.Maps.Map(document.getElementById('myMap'), {});
+      var map = new Microsoft.Maps.Map(document.getElementById('myMap'), { liteMode: true });
       map.setView({
         center: new Microsoft.Maps.Location(40.7127, -74.0059)
       });
@@ -95,11 +95,11 @@
         img.crossOrigin = 'anonymous';
         img.src = url;
       };
-      generateAllAngles('images/plane-small.svg', all => $.getJSON('normalized/normalized.json', data => animate(data, map, layer, all)));
+      generateAllAngles('images/plane-small.svg', all => $.getJSON('normalized/n.json', data => animate(data, map, layer, all)));
     }
   </script>
   <script src='https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js'></script>
-  <script type='text/javascript' src='https://cn.bing.com/api/maps/mapcontrol?key=AqWW02afqnXCd03_WLzEt0Rm0fdmD2_gbgwBXVT8ZwKN8fAzIqbxLy2bhdCcwyIh&callback=loadMapScenario'
+  <script type='text/javascript' src='https://cn.bing.com/api/maps/mapcontrol?key=AkbN_TNzX5f9e473HjLnHzqlGbz7HQuUYq5pZEZqpmaZ8grHMXc9mrIZ4HH-v6qC&callback=loadMapScenario'
     async defer></script>
 </body>
 

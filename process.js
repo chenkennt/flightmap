@@ -7,7 +7,10 @@ var prefix = process.argv[2];
 var aircrafts = {};
 fs.readdirSync('data').filter(f => f.startsWith(prefix)).forEach(f => {
   var data = JSON.parse(fs.readFileSync(`data/${f}`, 'utf8'));
-  data.acList.forEach(a => (aircrafts[a.Id] = aircrafts[a.Id] || []).push(a));
+  data.acList.forEach(a => {
+    if (!a.PosTime) a.PosTime = Number.parseInt(f.slice(0, -5));
+    (aircrafts[a.Icao] = aircrafts[a.Icao] || []).push(a);
+  });
   console.log(f + ' processed.');
 });
 

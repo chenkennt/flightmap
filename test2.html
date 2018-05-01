@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Flight Map</title>
+  <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+  <style type='text/css'>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Helvetica, Arial, Sans-Serif
+    }
+  </style>
+</head>
+
+<body>
+  <div id='printoutPanel'></div>
+  <div id='myMap' style='width: 100vw; height: 100vh;'></div>
+  <script type='text/javascript'>
+    function drawRoute(data, map) {
+      var line = new Microsoft.Maps.Polyline(data.map(d => new Microsoft.Maps.Location(d.lat, d.long)));
+      map.entities.push(line);
+    }
+    function moveOne(plane, index, icons, map) {
+      var frame = Math.floor(index / 30);
+      var subframe = index % 30;
+      if (frame >= plane.data.length - 1) return;
+      var ratio = subframe / 30;
+      var lat = plane.data[frame].lat + (plane.data[frame + 1].lat - plane.data[frame].lat) * subframe / 30;
+      var long = plane.data[frame].long + (plane.data[frame + 1].long - plane.data[frame].long) * subframe / 30;
+      plane.pin.setLocation(new Microsoft.Maps.Location(lat, long));
+      var d = plane.data[frame].direction;
+      if (Math.abs(plane.lastD - d) > 2) {
+        plane.pin.setOptions({
+          icon: icons[d].url,
+          anchor: new Microsoft.Maps.Point(icons[d].width / 2, icons[d].height / 2)
+        });
+        plane.lastD = d;
+      }
+      /*
+      var line = new Microsoft.Maps.Polyline([
+        new Microsoft.Maps.Location(plane.data[frame - 1].lat, plane.data[frame - 1].long),
+        new Microsoft.Maps.Location(plane.data[frame].lat, plane.data[frame].long)]);
+      map.entities.push(line);*/
+    }
+
+    function animate(data, map, layer, icons) {
+      var index = 0;
+      var planes = data.map(d => {
+        var plane = { data: d.data };
+        var loc = new Microsoft.Maps.Location(d.data[0].lat, d.data[0].long);
+        var dir = d.data[0].direction;
+        var pin = new Microsoft.Maps.Pushpin(loc, {
+          icon: icons[dir].url,
+          anchor: new Microsoft.Maps.Point(icons[dir].width / 2, icons[dir].height / 2)
+        });
+        layer.add(pin);
+        return {
+          data: d.data,
+          pin: pin,
+          lastD: dir
+        };
+      });
+      setInterval(() => {
+        index++;
+        planes.forEach(p => moveOne(p, index, icons, map));
+      }, 30);
+    }
+
+    function loadMapScenario() {
+      var map = new Microsoft.Maps.Map(document.getElementById('myMap'), {});
+      map.setView({
+        // center: new Microsoft.Maps.Location(40.7127, -74.0059)
+        bounds: new Microsoft.Maps.LocationRect(new Microsoft.Maps.Location(37, -95), 70, 24)
+      });
+      var layer = new Microsoft.Maps.Layer();
+      map.layers.insert(layer);
+      var generateAllAngles = (url, callback) => {
+        var img = new Image();
+        img.onload = function () {
+          var c = document.createElement('canvas');
+          var all = [];
+          for (var a = 0; a < 360; a++) {
+            var rads = a * Math.PI / 180;
+            c.width = img.width;
+            c.height = img.height;
+            var context = c.getContext('2d');
+            context.translate(c.width / 2, c.height / 2);
+            context.rotate(rads);
+            context.drawImage(img, -img.width / 2, -img.height / 2);
+            all.push({
+              width: c.width,
+              height: c.height,
+              url: c.toDataURL()
+            });
+          }
+          callback(all);
+        }
+        img.crossOrigin = 'anonymous';
+        img.src = url;
+      };
+      var file = 'selected/6.json';
+      //generateAllAngles('images/plane-small.svg', all => $.getJSON('normalized/normalized.json', data => animate(data, map, layer, all)));
+      $.getJSON(file, d => drawRoute(d, map));
+    }
+  </script>
+  <script src='https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js'></script>
+  <script type='text/javascript' src='https://cn.bing.com/api/maps/mapcontrol?key=AkbN_TNzX5f9e473HjLnHzqlGbz7HQuUYq5pZEZqpmaZ8grHMXc9mrIZ4HH-v6qC&callback=loadMapScenario'
+    async defer></script>
+</body>
+
+</html>

@@ -2,14 +2,19 @@ var fs = require('fs');
 var db = JSON.parse(fs.readFileSync('db.json', 'utf8'));
 
 var result = db
-  .filter(d => d.to.filter(f => f.indexOf('New York') >= 0).length > 0)
+//  .filter(d => d.to.filter(f => f.indexOf('New York') >= 0).length > 0)
   .filter(d => d.count >= 100);
 
-const minInterval = 10, minLength = 3600;
+var topleft = [49, -125], bottomright = [25, -65];
+const minInterval = 16, minLength = 3600;
 var count = 0;
+var inside = (lat, long) => long > topleft[1] && long < bottomright[1] && lat < topleft[0] && lat > bottomright[0];
 var record = data => {
   if (data.length === 0) return;
   var time = (data[data.length - 1].time - data[0].time) / 1000;
+  for (var i = 0; i < data.length; i++)
+    if (inside(data[i].lat, data[i].long)) break;
+  if (i == data.length) return;
   if (time >= minLength) {
     count++;
     console.log(`Id: ${count}, time: ${time}s`);
